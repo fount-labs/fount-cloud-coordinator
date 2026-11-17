@@ -1,0 +1,59 @@
+# Publishes a release when an admin pushes a v* tag. A ruleset lets only org
+# admins create those tags: the coordinator sends jobs, and their credentials, to
+# any enclave measured from a release here, so the tag push is the approval.
+
+name: Tinfoil Release
+
+run-name: Publish release ${{ github.ref_name }}
+
+on:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: tinfoil-container-release-${{ github.ref_name }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The tag is on main
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main ||
+            { echo "::error::$GITHUB_REF_NAME isn't on main"; exit 1; }
+      - name: The config is filled in
+        run: |
+          if grep -n PLACEHOLDER tinfoil-config.yml; then
+            echo "::error::tinfoil-config.yml still has placeholders"
+            exit 1
+          fi
+
+  measure-and-release:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # create the GitHub release
+      packages: read        # read the image it measures
+      id-token: write       # keyless attestation signing
+      attestations: write   # publish the attestation
+
+    steps:
+      - name: Measure image, attest, and publish the release
+        uses: tinfoilsh/measure-image-action@beba4296251f7a9bc44b481ebafe4863509e4380 # v0.14.1
+        with:
+          config-file: ${{ github.workspace }}/tinfoil-config.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # An enclave can only attest while its release has a freshness witness, and
+      # Tinfoil witnesses a repo's latest release. Without this, a new release can
+      # come up unable to send or receive keys.
+      - name: Mark the release latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" --repo "${{ github.repository }}" --latest
