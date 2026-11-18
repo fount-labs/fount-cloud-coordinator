@@ -36,7 +36,7 @@ networks:
 
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:c67ec7f6121016bcbdd07442c2cbb8f42249252aa87da0d14842eb63088cd25f" # fount-broker v0.5.7
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:4b837dfd89d37ec49979c5b9bc9e6e2bed35a66917c33c5d3775658bb22be1d3" # fount-broker v0.5.8
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
