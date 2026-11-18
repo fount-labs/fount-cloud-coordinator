@@ -65,6 +65,10 @@ containers:
       # fount-infra revokes, or an account whose Cloud lapses, is shut out
       # within the hour.
       - "--cloud-credentials-only"
+      # The model of every job a thread operation (startThread, sendNote)
+      # starts: DeepSeek V4.1 Flash, the Cloud jobs' model at 90 RPM an account.
+      - "--job-config"
+      - '{"model":"deepseek-v4-1-flash","providerId":"tinfoil","modelId":"deepseek-v4-1-flash","route":"tinfoil","modelInfo":{"id":"deepseek-v4-1-flash","name":"V4.1 Flash","limit":{"context":1048576,"output":131072},"tool_call":true,"reasoning":false,"attachment":false,"temperature":true,"cost":{"input":0,"output":0},"modalities":{"input":["text"],"output":["text"]}},"supportsTools":true,"supportsImages":false,"memoryEnabled":false,"scriptsApproved":true}'
     volumes:
       - state:/state
     env:
