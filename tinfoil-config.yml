@@ -61,6 +61,10 @@ containers:
       - "0.0.0.0:8792"
       - "--client-audience"
       - "https://coordinator-a.fount.containers.tinfoil.dev"
+      # Hour-long Cloud credentials only, not 7-day device ones, so a device
+      # fount-infra revokes, or an account whose Cloud lapses, is shut out
+      # within the hour.
+      - "--cloud-credentials-only"
     volumes:
       - state:/state
     env:
