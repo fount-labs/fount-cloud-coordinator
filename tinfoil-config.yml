@@ -9,7 +9,7 @@
 # one port. Its wrapping key is the dev one (--wrapping-key dev), made at boot
 # in the state volume. It must say dev: vault is the default and refuses --test-api,
 # and the real coordinators take theirs from the Cloud vaults.
-cvm-version: 0.14.18 # https://github.com/tinfoilsh/cvmimage/releases/latest, no `v`
+cvm-version: 0.14.19 # https://github.com/tinfoilsh/cvmimage/releases/latest, no `v`
 cpus: 4
 memory: 16384
 
@@ -33,10 +33,16 @@ networks:
       # The runner enclaves. Checking a runner needs no other hosts: a V3
       # document carries its own collateral, verified offline.
       - runner-a.fount.containers.tinfoil.dev
+      # The mail edge (--mail), checked against fount-labs/fount-mail-edge's
+      # releases the same way.
+      - edge.fount.containers.tinfoil.dev
+      # Dev fount-infra, which renews Cloud mailboxes' entitlements
+      # (--mail-entitlements).
+      - v5yqocwk2b.execute-api.us-east-1.amazonaws.com
 
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:ebe958eef4bab349a47ec7dad0a7f701dae98b4d0782c06a42ac6484338f2a4c" # fount-broker v0.5.9
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:94f9ce1811b5ff39a39bf8d22c8ed75a39ee125d2a5d3a54e92ec5140ddb0437" # fount-broker v0.6.0
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
@@ -67,6 +73,14 @@ containers:
       - "--cloud-credentials-only"
       # The model of every job a thread operation (startThread, sendNote)
       # starts: DeepSeek V4.1 Flash, the Cloud jobs' model at 90 RPM an account.
+      # Workers' mail from the mail edge. Generation certificates are signed
+      # with a dev seed (a Tinfoil secret) whose public half is the edge's
+      # COORDINATOR_AUTHORITY_KEY, standing in for the Cloud vault pair.
+      - "--mail"
+      - "--mail-generation-authority"
+      - "env:FOUNT_MAIL_GENERATION_AUTHORITY"
+      - "--mail-entitlements"
+      - "https://v5yqocwk2b.execute-api.us-east-1.amazonaws.com/prod/"
       - "--job-config"
       - '{"model":"deepseek-v4-1-flash","providerId":"tinfoil","modelId":"deepseek-v4-1-flash","route":"tinfoil","modelInfo":{"id":"deepseek-v4-1-flash","name":"V4.1 Flash","limit":{"context":1048576,"output":131072},"tool_call":true,"reasoning":false,"attachment":false,"temperature":true,"cost":{"input":0,"output":0},"modalities":{"input":["text"],"output":["text"]}},"supportsTools":true,"supportsImages":false,"memoryEnabled":false,"scriptsApproved":true}'
     volumes:
@@ -79,6 +93,8 @@ containers:
     secrets:
       # The test API's bearer token, 32 random bytes as hex.
       - FOUNT_TEST_API_TOKEN
+      # The dev mail generation authority's Ed25519 seed, base64.
+      - FOUNT_MAIL_GENERATION_AUTHORITY
     healthcheck:
       test: ["CMD", "/fount-coordinator", "health", "http://127.0.0.1:8792/health"]
       interval: 30s
