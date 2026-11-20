@@ -30,9 +30,10 @@ networks:
   coordinator-out:
     egress: allowlist
     allow:
-      # The runner enclaves. Checking a runner needs no other hosts: a V3
-      # document carries its own collateral, verified offline.
-      - runner-a.fount.containers.tinfoil.dev
+      # No runner enclaves: they dial in (--runners-dial-in), as a stopped
+      # runner's name doesn't resolve and one name that doesn't fails the whole
+      # allowlist. Checking a runner needs no hosts: a V3 document carries its
+      # own collateral, verified offline.
       # The mail edge (--mail), checked against fount-labs/fount-mail-edge's
       # releases the same way.
       - edge.fount.containers.tinfoil.dev
@@ -42,7 +43,7 @@ networks:
 
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:94f9ce1811b5ff39a39bf8d22c8ed75a39ee125d2a5d3a54e92ec5140ddb0437" # fount-broker v0.6.0
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:6fcd56ef60f10e213c358f029f5c19290599875e3083c035903818dea8838169" # fount-broker v0.7.0
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
@@ -50,8 +51,7 @@ containers:
     command:
       - "--dir"
       - "/state"
-      - "--runner-addr"
-      - "https://runner-a.fount.containers.tinfoil.dev"
+      - "--runners-dial-in" # runners link in on --client-listen's /fount-link
       - "--runners"
       - "1"
       - "--slots"
@@ -109,4 +109,5 @@ shim:
     - /health
     - /status
     - /fount-client # the client channel, an HTTP upgrade
+    - /fount-link # runner enclaves' links, HTTP upgrades they dial
     - /v0/* # the test API, behind its bearer token
