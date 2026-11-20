@@ -43,7 +43,7 @@ networks:
 
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:6fcd56ef60f10e213c358f029f5c19290599875e3083c035903818dea8838169" # fount-broker v0.7.0
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:ba0aebbb4bfd0a55d8d29ca7d2a1c089bb96bdccfdee6a829e79f60cb02a90d7" # fount-broker v0.8.0
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
@@ -71,6 +71,12 @@ containers:
       # fount-infra revokes, or an account whose Cloud lapses, is shut out
       # within the hour.
       - "--cloud-credentials-only"
+      # Team runners (launch plan R2/R3): a runner named runner-dev-tm-<24 hex>
+      # serves that team alone for its boot, and a team's jobs wait for its
+      # runner. fount-infra's team-runner Lambda starts and stops them from
+      # /control/runners.
+      - "--team-runner-stage"
+      - "dev"
       # The model of every job a thread operation (startThread, sendNote)
       # starts: DeepSeek V4.1 Flash, the Cloud jobs' model at 90 RPM an account.
       # Workers' mail from the mail edge. Generation certificates are signed
@@ -95,6 +101,9 @@ containers:
       - FOUNT_TEST_API_TOKEN
       # The dev mail generation authority's Ed25519 seed, base64.
       - FOUNT_MAIL_GENERATION_AUTHORITY
+      # The team-runner Lambda's bearer token for /control/runners, 32 random
+      # bytes as hex; also Secrets Manager fount/coordinator-control-token-dev.
+      - FOUNT_CONTROL_TOKEN
     healthcheck:
       test: ["CMD", "/fount-coordinator", "health", "http://127.0.0.1:8792/health"]
       interval: 30s
@@ -110,4 +119,5 @@ shim:
     - /status
     - /fount-client # the client channel, an HTTP upgrade
     - /fount-link # runner enclaves' links, HTTP upgrades they dial
+    - /control/runners # teams' queues for the team-runner Lambda, behind FOUNT_CONTROL_TOKEN
     - /v0/* # the test API, behind its bearer token
