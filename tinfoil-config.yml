@@ -120,4 +120,5 @@ shim:
     - /fount-client # the client channel, an HTTP upgrade
     - /fount-link # runner enclaves' links, HTTP upgrades they dial
     - /control/runners # teams' queues for the team-runner Lambda, behind FOUNT_CONTROL_TOKEN
+    - /control/mail # the mail loop's phase and last error, behind FOUNT_CONTROL_TOKEN
     - /v0/* # the test API, behind its bearer token
