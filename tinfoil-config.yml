@@ -7,7 +7,7 @@
 # which takes dev fount-infra's credentials and grants naming this enclave's
 # origin, and the dev API behind a bearer token (--test-api), both on the shim's
 # one port. Its wrapping key is the dev one (--wrapping-key dev), made at boot
-# in the state volume. It must say dev: vault is the default and refuses --test-api,
+# on the state volume. It must say dev: vault is the default and refuses --test-api,
 # and the real coordinators take theirs from the Cloud vaults.
 cvm-version: 0.14.19 # https://github.com/tinfoilsh/cvmimage/releases/latest, no `v`
 cpus: 4
@@ -41,9 +41,17 @@ networks:
       # (--mail-entitlements).
       - v5yqocwk2b.execute-api.us-east-1.amazonaws.com
 
+# The coordinator's state, on a Tinfoil encrypted disk (coordinator-a-state,
+# attached as state). No key-secret: the coordinator unlocks it itself over
+# the volume's control socket (--volume), with a key only it derives: from
+# the Cloud vaults' wrapping key in production, here from the dev seed
+# FOUNT_MAIL_GENERATION_AUTHORITY. A blank disk is initialized on first boot.
+volumes:
+  - name: state
+
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:70a9886f5ca02cfe7ef3c3d3935899a4761f3442a42ac22beda1ea77b616d8d1" # fount-broker v0.8.1
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:8c25c1b6bb9c8800d557b776c2e219dbb439499564c7b0f5f3cabbebc08d403a" # fount-broker v0.8.2
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
@@ -85,12 +93,13 @@ containers:
       - "--mail"
       - "--mail-generation-authority"
       - "env:FOUNT_MAIL_GENERATION_AUTHORITY"
+      - "--volume"
+      - "state"
       - "--mail-entitlements"
       - "https://v5yqocwk2b.execute-api.us-east-1.amazonaws.com/prod/"
       - "--job-config"
       - '{"model":"deepseek-v4-1-flash","providerId":"tinfoil","modelId":"deepseek-v4-1-flash","route":"tinfoil","modelInfo":{"id":"deepseek-v4-1-flash","name":"V4.1 Flash","limit":{"context":1048576,"output":131072},"tool_call":true,"reasoning":false,"attachment":false,"temperature":true,"cost":{"input":0,"output":0},"modalities":{"input":["text"],"output":["text"]}},"supportsTools":true,"supportsImages":false,"memoryEnabled":false,"scriptsApproved":true}'
-    volumes:
-      - state:/state
+    persistent_volumes: [state:/state]
     env:
       - FOUNT_RUNNER_REPO: "fount-labs/fount-cloud-runner"
       # Dev fount-infra's credential-signing key (KMS, RSA 2048), SPKI DER as
