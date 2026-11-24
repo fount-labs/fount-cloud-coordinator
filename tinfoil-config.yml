@@ -51,7 +51,7 @@ volumes:
 
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:865b96761784909942ee05719f8ac3de9c812d777de59b873808b6c1410745e7" # fount-broker v0.8.4
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:7f0073f2d3af9c51c8bd6d8d439c0f34546692ecdaf31a82a6cd997567511e33" # fount-broker v0.8.5
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
