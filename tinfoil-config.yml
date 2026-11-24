@@ -38,7 +38,7 @@ networks:
       # releases the same way.
       - edge.fount.containers.tinfoil.dev
       # Dev fount-infra, which renews Cloud mailboxes' entitlements
-      # (--mail-entitlements).
+      # (--mail-entitlements) and answers firm teams' billing (--team-billing).
       - v5yqocwk2b.execute-api.us-east-1.amazonaws.com
 
 # The coordinator's state, on a Tinfoil encrypted disk (coordinator-a-state,
@@ -51,7 +51,7 @@ volumes:
 
 containers:
   - name: coordinator
-    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:0c272ae3122e59286f07f7fc69272fb60a82e5436fde706920a8cc37f3c24d6b" # fount-broker v0.8.3
+    image: "ghcr.io/fount-labs/fount-broker/coordinator@sha256:865b96761784909942ee05719f8ac3de9c812d777de59b873808b6c1410745e7" # fount-broker v0.8.4
     networks: [coordinator-out]
     keys: [fount-link, job-signing, fount-client]
     attestation: true
@@ -96,6 +96,11 @@ containers:
       - "--volume"
       - "state"
       - "--mail-entitlements"
+      - "https://v5yqocwk2b.execute-api.us-east-1.amazonaws.com/prod/"
+      # Firm teams' subscriptions (POST coordinator/team-entitlement), and the
+      # admin and seat statements Desktop takes to fount-infra's team billing.
+      # A team pays for itself; until it does its email agents take no jobs.
+      - "--team-billing"
       - "https://v5yqocwk2b.execute-api.us-east-1.amazonaws.com/prod/"
       - "--job-config"
       - '{"model":"deepseek-v4-1-flash","providerId":"tinfoil","modelId":"deepseek-v4-1-flash","route":"tinfoil","modelInfo":{"id":"deepseek-v4-1-flash","name":"V4.1 Flash","limit":{"context":1048576,"output":131072},"tool_call":true,"reasoning":false,"attachment":false,"temperature":true,"cost":{"input":0,"output":0},"modalities":{"input":["text"],"output":["text"]}},"supportsTools":true,"supportsImages":false,"memoryEnabled":false,"scriptsApproved":true}'
